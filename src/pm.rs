@@ -4,7 +4,7 @@ use std::thread;
 use std::process::Command;
 
 use curl::easy::Easy;
-//use curl::easy::List;
+use curl::easy::List;
 use std::io::stdout;
 use std::io::Read;
 use std::io::Write;
@@ -15,6 +15,16 @@ use serde::{Deserialize, Serialize};
 use serde_with::json::nested;
 use std::str::from_utf8;
 use std::cell::RefCell;
+
+use std::fs::File;
+use std::io::prelude::*;
+
+fn syncdisk(d: &str) -> std::io::Result<()> 
+{
+    let mut file = File::create("/Users/ylin020/.vault_token")?;
+    file.write_all(d.as_bytes())?;
+    Ok(())
+}
 
 fn powerful_match(x: &str) -> String
 {
@@ -79,12 +89,14 @@ pub fn get_vault_token(t: &'static str, u: &str)
     easy.post(true).unwrap();
     easy.post_field_size(data.as_bytes().len() as u64).unwrap();
 
-    easy.read_function(move|buf| {
+    let mut token : String = String::new();
+    let mut h = easy.transfer(); 
+    h.read_function(|buf| {
         Ok(data.as_bytes().read(buf).unwrap_or(0))
     }).unwrap();
 
-    let mut token : String = String::new();
-    easy.transfer().write_function(|dato| {
+    h.write_function(|dato| {
+        println!("here!");
         tout.extend_from_slice(dato);
         let s = match from_utf8(&tout[..]) {
            Ok(v) => v,
@@ -93,12 +105,17 @@ pub fn get_vault_token(t: &'static str, u: &str)
 
         let j : Value = serde_json::from_str(&s.trim_end()).unwrap();
         token = j["auth"]["client_token"].to_string();
+        println!("{}", token);
         Ok(dato.len())
     }).unwrap();
-
-    println!("{:?}", token);
-    easy.perform().unwrap();
+    
+    h.perform().unwrap();
 }
+
+/*pub fn get_list(p: &str) -> Option<String> 
+{
+    
+}*/
 
 pub fn get_url(u: &str) {
     let mut easy = Easy::new();
