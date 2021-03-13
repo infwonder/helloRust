@@ -3,7 +3,7 @@ use std::time::Duration;
 use std::thread;
 use std::process::Command;
 
-//use curl::easy::Easy;
+use curl::easy::Easy;
 //use curl::easy::List;
 use std::io::stdout;
 use std::io::Read;
@@ -14,7 +14,7 @@ use serde_json::json;
 use serde::{Deserialize, Serialize};
 use serde_with::json::nested;
 use std::str::from_utf8;
-//use std::cell::RefCell;
+use std::cell::RefCell;
 
 fn powerful_match(x: &str) -> String
 {
@@ -58,40 +58,11 @@ pub fn hex2int(h: &str)
     println!("{}", a.unwrap_or(0));
 }
 
-pub fn get_vault_token(t: &'static str, u: &str) -> String
-{
-  "test".to_string()
-}
-/*pub fn get_vault_token(t: &'static str, u: &str)
-{
-    let data =json!({"token": t}).to_string();
-    let mut easy = Easy::new();
-    let tout : Vec<u8> = Vec::new();
-
-    easy.url(u).unwrap();
-    easy.post(true).unwrap();
-    easy.post_field_size(data.as_bytes().len() as u64).unwrap();
-
-    easy.read_function(move|buf| {
-        Ok(data.as_bytes().read(buf).unwrap_or(0))
-    }).unwrap();
-
-    easy.write_function(move|dato| {
-        tout.extend_from_slice(dato);
-        Ok(dato.len())
-    }).unwrap();
-
-    easy.perform().unwrap();
-}*/
-
-/*pub fn get_vault_token(t: &'static str, u: &str)
+pub fn get_vault_token(t: &'static str, u: &str)
 {
     let data =json!({"token": t}).to_string();
     let mut easy = Easy::new();
     let mut tout : Vec<u8> = Vec::new();
-
-    let path: RefCell<Option<String>> = RefCell::new(None);
-    let captured_path = path.clone();  // clone the Arc to use in closure
 
     #[derive(Deserialize, Debug)]
     struct Obj {
@@ -112,7 +83,8 @@ pub fn get_vault_token(t: &'static str, u: &str) -> String
         Ok(data.as_bytes().read(buf).unwrap_or(0))
     }).unwrap();
 
-    easy.write_function(|dato| {
+    let mut token : String = String::new();
+    easy.transfer().write_function(|dato| {
         tout.extend_from_slice(dato);
         let s = match from_utf8(&tout[..]) {
            Ok(v) => v,
@@ -120,11 +92,11 @@ pub fn get_vault_token(t: &'static str, u: &str) -> String
         };
 
         let j : Value = serde_json::from_str(&s.trim_end()).unwrap();
-        let token = j["auth"]["client_token"].to_string();
-        *captured_path.borrow_mut() = Some(token);
+        token = j["auth"]["client_token"].to_string();
         Ok(dato.len())
     }).unwrap();
 
+    println!("{:?}", token);
     easy.perform().unwrap();
 }
 
@@ -139,7 +111,7 @@ pub fn get_url(u: &str) {
     easy.perform().unwrap();
 
     println!("{}", easy.response_code().unwrap());
-}*/
+}
 
 
 
